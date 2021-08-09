@@ -22,7 +22,6 @@
 package org.jboss.as.patch.generator.maven.plugin;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -152,26 +151,10 @@ public class PatchGenMojo extends AbstractMojo {
             args.add( PatchGenerator.COMBINE_WITH + "=" + combineWith.getPath() );
         }
 
-        // Ideally, we'd just invoke PatchGenerator directly; currently we cannot do so due to https://issues.jboss.org/browse/MODULES-136:
-        // JBoss Modules, when used as a library, will set some system properties to values causing trouble for other plug-ins later in the
-        // build; e.g. SAXParserFactory is redirected to a JBoss Modules specific variant which then cannot be found by other users such as
-        // the Checkstyle plug-in (which naturally doesn't have JBoss Modules on the plug-in dependency path). Hence we start patch-gen in
-        // a separate process
-        //
-        // PatchGenerator.main( args.toArray( new String[0] ) );
         try {
-            Process p = new ProcessBuilder( args )
-                    .redirectOutput( new File( buildDirectory, LOG_FILE ) )
-                    .redirectError( new File( buildDirectory, LOG_FILE ) )
-                    .start();
-            p.waitFor();
-        }
-        catch (IOException | InterruptedException e) {
-            throw new MojoExecutionException( "Execution of PatchGenerator failed. See " + LOG_FILE + " for details.", e );
-        }
-
-        if ( !outputFile.exists() ) {
-            throw new MojoExecutionException( "Execution of PatchGenerator failed. See " + LOG_FILE + " for details." );
+            PatchGenerator.main(args.toArray(new String[0]));
+        }   catch (Exception ex) {
+            throw new MojoExecutionException("Execution of PatchGenerator failed.", ex);
         }
     }
 
